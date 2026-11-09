@@ -16,7 +16,7 @@ import {
 import { paths } from "@/router/routes";
 import { AgentRail } from "@/components/agent/AgentRail";
 import { agentPageUrl } from "@/components/agent/agentUrl";
-import { bareName, isNotFound, useAgent, useAgentInstance, useAgentInstances } from "@/api";
+import { bareName, isNotFound, namesEgressPolicy, useAgent, useAgentInstance, useAgentInstances } from "@/api";
 import { buildPath } from "@/router/routes";
 import { linkInk } from "@/components/common/linkStyles";
 import { egressCopy } from "@/components/egress-policy-form/egressPolicyCopy";
@@ -140,15 +140,22 @@ export function AgentDetailsPage() {
                   <Text css={{ color: theme.color.textMuted }}>{egressCopy.agent.none}</Text>
                 ) : (
                   <Space size={[12, 4]} wrap data-testid="instance-egress-policies">
-                    {egressRefs.map((ref) => (
-                      <Link
-                        key={ref.name}
-                        to={buildPath(paths.egressPolicyDetail, { namespace: agentNamespace ?? "", name: ref.name })}
-                        css={{ fontFamily: theme.font.mono, ...linkInk(theme) }}
-                      >
-                        {ref.name}
-                      </Link>
-                    ))}
+                    {egressRefs.map((ref) =>
+                      // Another kind never resolves to the same-named EgressPolicy, so it gets no link.
+                      namesEgressPolicy(ref) ? (
+                        <Link
+                          key={ref.name}
+                          to={buildPath(paths.egressPolicyDetail, { namespace: agentNamespace ?? "", name: ref.name })}
+                          css={{ fontFamily: theme.font.mono, ...linkInk(theme) }}
+                        >
+                          {ref.name}
+                        </Link>
+                      ) : (
+                        <Text key={ref.name} css={{ fontFamily: theme.font.mono }}>
+                          {`${ref.kind ?? "EgressPolicy"} ${ref.name}`}
+                        </Text>
+                      ),
+                    )}
                   </Space>
                 ),
               },

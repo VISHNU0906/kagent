@@ -5,6 +5,7 @@ import {
   appliedState,
   destinationProblems,
   egressPolicyRefsFromNames,
+  namesEgressPolicy,
   policyUsers,
   specProblems,
   type EgressAuthentication,
@@ -213,5 +214,17 @@ describe("egressPolicyRefsFromNames", () => {
     expect(refs).toEqual([{ group: "example.com", kind: "Foo", name: "github" }, { name: "new" }]);
     refs[0].name = "edited";
     expect(existing[0].name).toBe("github");
+  });
+});
+
+describe("namesEgressPolicy", () => {
+  it.each<[string, Parameters<typeof namesEgressPolicy>[0], boolean]>([
+    ["omitted group and kind", { name: "p" }, true],
+    ["explicit default", { group: "api.kagent.dev", kind: "EgressPolicy", name: "p" }, true],
+    ["another kind", { group: "example.com", kind: "Foo", name: "p" }, false],
+    ["another kind in the default group", { group: "api.kagent.dev", kind: "Foo", name: "p" }, false],
+    ["the same kind in another group", { group: "example.com", kind: "EgressPolicy", name: "p" }, false],
+  ])("%s", (_, ref, expected) => {
+    expect(namesEgressPolicy(ref)).toBe(expected);
   });
 });

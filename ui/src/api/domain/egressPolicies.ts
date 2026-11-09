@@ -220,7 +220,7 @@ function references(
 }
 
 /** A reference to another kind never resolves to this EgressPolicy, even with the same name. */
-function namesEgressPolicy(ref: EgressPolicyReference): boolean {
+export function namesEgressPolicy(ref: EgressPolicyReference): boolean {
   return (ref.group || "api.kagent.dev") === "api.kagent.dev" && (ref.kind || "EgressPolicy") === "EgressPolicy";
 }
 
