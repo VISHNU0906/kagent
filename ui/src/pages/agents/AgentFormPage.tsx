@@ -14,6 +14,7 @@ import {
 import { hasUnshownSpecFields } from "@/components/agent-template-form/unshownFields";
 import {
   apiClient,
+  egressPolicyRefsFromNames,
   useAgent,
   useAgentTemplates,
   useNamespaceEgressPolicies,
@@ -138,7 +139,7 @@ function AgentForm({ agent }: { agent?: Agent }) {
     setSaving(true);
     setFailure(undefined);
     const agentSpec = {
-      ...(egressRefs.length > 0 ? { egressPolicyRefs: egressRefs.map((ref) => ({ name: ref })) } : {}),
+      ...(egressRefs.length > 0 ? { egressPolicyRefs: egressPolicyRefsFromNames(egressRefs, spec?.egressPolicyRefs) } : {}),
       template: templateSource === "reference"
         ? { ref: { name: templateRef! } }
         : { inline: specFromDraft(inlineTemplate, spec?.template.inline) },

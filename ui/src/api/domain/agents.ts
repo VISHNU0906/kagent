@@ -1,4 +1,4 @@
-import type { ResourceMetadata } from "./common";
+import type { EgressPolicyReference, ResourceMetadata } from "./common";
 import type { AgentTemplate, AgentTemplateSpec } from "./agentTemplates";
 
 /** Exactly one template source; refs resolve in the Agent's namespace. */
@@ -8,7 +8,7 @@ export type AgentTemplateSource =
 export interface AgentSpec {
   template: AgentTemplateSource;
   harnessRef: { name: string };
-  egressPolicyRefs?: { name: string }[];
+  egressPolicyRefs?: EgressPolicyReference[];
 }
 /** One condition the controller recorded for an Agent. */
 export interface AgentCondition {

@@ -1,10 +1,10 @@
 /** The part of `SandboxTemplate` the UI reads. The rest of the CR is left alone. */
-import type { ResourceMetadata } from "./common";
+import type { EgressPolicyReference, ResourceMetadata } from "./common";
 import type { AgentCondition } from "./agents";
 
 export interface SandboxTemplateResource {
   metadata: ResourceMetadata;
-  spec?: { egressPolicyRefs?: { name: string }[] };
+  spec?: { egressPolicyRefs?: EgressPolicyReference[] };
   status?: { conditions?: AgentCondition[] };
 }
 

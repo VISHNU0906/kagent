@@ -1,5 +1,5 @@
 /** `EgressPolicy`, field for field with `go/api/v1alpha3/egresspolicy_types.go`. */
-import type { ActorJWT, ResourceMetadata, SecretKeySelector } from "./common";
+import type { ActorJWT, EgressPolicyReference, ResourceMetadata, SecretKeySelector } from "./common";
 import type { Agent, AgentCondition } from "./agents";
 import type { SandboxTemplate } from "./sandboxTemplates";
 
@@ -212,10 +212,24 @@ export function appliedState(
 
 /** Whether `refs` names the policy. Refs resolve in the owner's own namespace. */
 function references(
-  owner: { namespace: string; refs?: readonly { name: string }[] },
+  owner: { namespace: string; refs?: readonly EgressPolicyReference[] },
   policy: { namespace: string; name: string },
 ): boolean {
-  return owner.namespace === policy.namespace && (owner.refs ?? []).some((ref) => ref.name === policy.name);
+  return owner.namespace === policy.namespace &&
+    (owner.refs ?? []).some((ref) => ref.name === policy.name && namesEgressPolicy(ref));
+}
+
+/** A reference to another kind never resolves to this EgressPolicy, even with the same name. */
+function namesEgressPolicy(ref: EgressPolicyReference): boolean {
+  return (ref.group || "api.kagent.dev") === "api.kagent.dev" && (ref.kind || "EgressPolicy") === "EgressPolicy";
+}
+
+/** The selected policy names as references. A name that was already referenced keeps its group and kind. */
+export function egressPolicyRefsFromNames(
+  names: readonly string[],
+  existing: readonly EgressPolicyReference[] = [],
+): EgressPolicyReference[] {
+  return names.map((name) => ({ ...(existing.find((ref) => ref.name === name) ?? { name }) }));
 }
 
 /** Every Agent and SandboxTemplate that references the policy, sorted by kind then name. */

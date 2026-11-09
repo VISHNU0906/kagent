@@ -4,6 +4,7 @@ import type { SandboxTemplate } from "./sandboxTemplates";
 import {
   appliedState,
   destinationProblems,
+  egressPolicyRefsFromNames,
   policyUsers,
   specProblems,
   type EgressAuthentication,
@@ -126,6 +127,15 @@ describe("policyUsers", () => {
     ]);
   });
 
+  it("ignores a reference to another kind with the policy's name", () => {
+    const other = agent("kagent", "other-kind", []);
+    other.resource.spec.egressPolicyRefs = [{ group: "example.com", kind: "Foo", name: "github" }];
+    const explicit = agent("kagent", "explicit", []);
+    explicit.resource.spec.egressPolicyRefs = [{ group: "api.kagent.dev", kind: "EgressPolicy", name: "github" }];
+    const users = policyUsers({ namespace: "kagent", name: "github" }, [other, explicit], []);
+    expect(users.map((user) => user.name)).toEqual(["explicit"]);
+  });
+
   it("reports a missing condition as not reported rather than applied", () => {
     expect(appliedState(undefined, github)).toEqual({ applied: "notReported" });
     expect(appliedState([{ type: "Ready", status: "True" }], github)).toEqual({ applied: "notReported" });
@@ -193,5 +203,15 @@ describe("appliedState", () => {
     const state = appliedState([{ ...condition, observedGeneration }], github, generation);
 
     expect(state.applied).toBe(expected);
+  });
+});
+
+describe("egressPolicyRefsFromNames", () => {
+  it("keeps an existing reference's group and kind and adds new names as plain references", () => {
+    const existing = [{ group: "example.com", kind: "Foo", name: "github" }, { name: "dropped" }];
+    const refs = egressPolicyRefsFromNames(["github", "new"], existing);
+    expect(refs).toEqual([{ group: "example.com", kind: "Foo", name: "github" }, { name: "new" }]);
+    refs[0].name = "edited";
+    expect(existing[0].name).toBe("github");
   });
 });

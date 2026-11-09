@@ -48,6 +48,13 @@ export interface TypedLocalReference {
   namespace?: string;
 }
 
+/** An egress policy in the owner's namespace. Omitted `group` and `kind` mean api.kagent.dev EgressPolicy. */
+export interface EgressPolicyReference {
+  group?: string;
+  kind?: string;
+  name: string;
+}
+
 export interface SecretKeySelector {
   name: string;
   key: string;
