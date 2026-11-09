@@ -56,21 +56,30 @@ spec:
                   EgressPolicyRefs grants additional access in this template's namespace.
                   Changes update the access of existing sandboxes without restarting them.
                 items:
-                  description: |-
-                    LocalObjectReference contains enough information to let you locate the
-                    referenced object inside the same namespace.
+                  description: EgressPolicyReference identifies a policy in the owner's
+                    namespace.
                   properties:
+                    group:
+                      description: Group is the referenced API group. It defaults
+                        to api.kagent.dev and requires kind.
+                      maxLength: 253
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                      type: string
+                    kind:
+                      description: Kind is the referenced kind. It defaults to EgressPolicy.
+                      maxLength: 63
+                      minLength: 1
+                      pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                      type: string
                     name:
                       default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      description: Name is the policy name.
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                  x-kubernetes-validations:
+                  - message: group requires kind
+                    rule: '!has(self.group) || has(self.kind)'
                 maxItems: 16
                 type: array
                 x-kubernetes-list-map-keys:

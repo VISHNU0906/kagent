@@ -62,7 +62,7 @@ type AgentSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self.all(ref, has(ref.name) && ref.name != '')",message="egressPolicyRefs requires non-empty names"
 	// +listType=map
 	// +listMapKey=name
-	EgressPolicyRefs []corev1.LocalObjectReference `json:"egressPolicyRefs,omitempty"`
+	EgressPolicyRefs []EgressPolicyReference `json:"egressPolicyRefs,omitempty"`
 }
 
 // AgentTemplateSource selects portable behavior inline or by local reference.

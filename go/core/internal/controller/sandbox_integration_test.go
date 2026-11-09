@@ -42,7 +42,7 @@ func TestSandboxKRTInformerQueueAndRestartCleanup(t *testing.T) {
 	template := sandboxTestTemplate()
 	template.UID = ""
 	template.Generation = 0
-	template.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "tickets"}}
+	template.Spec.EgressPolicyRefs = []kagentv1alpha3.EgressPolicyReference{{Name: "tickets"}}
 	template, err = client.ApiV1alpha3().SandboxTemplates(template.Namespace).Create(t.Context(), template, metav1.CreateOptions{})
 	require.NoError(t, err)
 	unwatched := template.DeepCopy()

@@ -32,7 +32,7 @@ type EgressGrantResolution struct {
 // CompileEgressPolicies resolves each same-namespace policy independently.
 // KRT tracks policy and Secret dependencies. An unresolved policy contributes
 // no grants, without removing grants supplied by the remaining policies.
-func CompileEgressPolicies(ctx krt.HandlerContext, collections Collections, namespace string, refs []corev1.LocalObjectReference) EgressGrantResolution {
+func CompileEgressPolicies(ctx krt.HandlerContext, collections Collections, namespace string, refs []v1alpha3.EgressPolicyReference) EgressGrantResolution {
 	return compileEgressPolicies(namespace, refs, func(name string) (*v1alpha3.EgressPolicy, error) {
 		policy := krt.FetchOne(ctx, collections.EgressPolicies, krt.FilterKey(namespace+"/"+name))
 		if policy == nil {
@@ -48,7 +48,7 @@ func CompileEgressPolicies(ctx krt.HandlerContext, collections Collections, name
 	})
 }
 
-func compileEgressPolicies(namespace string, refs []corev1.LocalObjectReference, getPolicy func(string) (*v1alpha3.EgressPolicy, error), getSecret func(string) (*corev1.Secret, error)) EgressGrantResolution {
+func compileEgressPolicies(namespace string, refs []v1alpha3.EgressPolicyReference, getPolicy func(string) (*v1alpha3.EgressPolicy, error), getSecret func(string) (*corev1.Secret, error)) EgressGrantResolution {
 	var result EgressGrantResolution
 	var invalidRefs string
 	if len(refs) > 16 {
@@ -64,6 +64,11 @@ func compileEgressPolicies(namespace string, refs []corev1.LocalObjectReference,
 		issue := EgressGrantIssue{Policy: namespace + "/" + ref.Name, Reason: v1alpha3.EgressPoliciesReasonInvalidEgressPolicy}
 		if invalidRefs != "" {
 			issue.Message = invalidRefs
+			result.Issues = append(result.Issues, issue)
+			continue
+		}
+		if kind := ref.GroupKind(); kind != v1alpha3.EgressPolicyGroupKind {
+			issue.Reason, issue.Message = v1alpha3.EgressPoliciesReasonInvalidKind, fmt.Sprintf("%s %s", ErrInvalidKind, kind)
 			result.Issues = append(result.Issues, issue)
 			continue
 		}

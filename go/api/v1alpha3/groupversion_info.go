@@ -39,4 +39,9 @@ var (
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
+
+	// The kinds that model, MCP server, and egress policy references resolve.
+	ModelConfigGroupKind     = GroupVersion.WithKind("ModelConfig").GroupKind()
+	RemoteMCPServerGroupKind = GroupVersion.WithKind("RemoteMCPServer").GroupKind()
+	EgressPolicyGroupKind    = GroupVersion.WithKind(EgressPolicyKind).GroupKind()
 )

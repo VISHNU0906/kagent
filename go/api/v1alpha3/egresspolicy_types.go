@@ -99,5 +99,6 @@ const (
 	EgressPoliciesReasonApplied             = "Applied"
 	EgressPoliciesReasonNotFound            = "EgressPolicyNotFound"
 	EgressPoliciesReasonInvalidEgressPolicy = "InvalidEgressPolicy"
+	EgressPoliciesReasonInvalidKind         = "InvalidKind"
 	EgressPoliciesReasonConflict            = "EgressGrantConflict"
 )

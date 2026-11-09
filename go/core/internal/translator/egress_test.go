@@ -39,7 +39,7 @@ func TestEgressPolicyCredentialPrefixes(t *testing.T) {
 			policy, secret := egressPolicy()
 			auth := policy.Spec.Destinations[0].Authentication
 			auth.Header, auth.Prefix = tc.header, tc.prefix
-			resolution := translator.CompileEgressPolicies(krt.TestingDummyContext{}, mockCollections(t, policy, secret), "test", []corev1.LocalObjectReference{{Name: policy.Name}})
+			resolution := translator.CompileEgressPolicies(krt.TestingDummyContext{}, mockCollections(t, policy, secret), "test", []v1alpha3.EgressPolicyReference{{Name: policy.Name}})
 			require.Empty(t, resolution.Issues)
 			access := resolution.Access
 			wantHeader := "authorization"
@@ -54,7 +54,7 @@ func TestEgressPolicyCredentialPrefixes(t *testing.T) {
 func TestEgressPolicyHTTPCredentials(t *testing.T) {
 	policy, secret := egressPolicy()
 	policy.Spec.Destinations[0].Origin = "http://tickets.example.com:8080"
-	resolution := translator.CompileEgressPolicies(krt.TestingDummyContext{}, mockCollections(t, policy, secret), "test", []corev1.LocalObjectReference{{Name: policy.Name}})
+	resolution := translator.CompileEgressPolicies(krt.TestingDummyContext{}, mockCollections(t, policy, secret), "test", []v1alpha3.EgressPolicyReference{{Name: policy.Name}})
 	require.Empty(t, resolution.Issues)
 	access := resolution.Access
 	require.Equal(t, []string{"http://tickets.example.com:8080"}, access.Destinations)
@@ -88,9 +88,9 @@ func TestAgentEgressPoliciesDoNotChangeRuntimeAcrossHarnesses(t *testing.T) {
 				model.Spec.Provider, model.Spec.Model = v1alpha3.ModelProviderAnthropic, "claude-sonnet-4-5"
 				model.Spec.APIKeySecret, model.Spec.APIKeySecretKey = secret.Name, "token"
 			}
-			template := &v1alpha3.AgentTemplate{ObjectMeta: metav1.ObjectMeta{Namespace: "test", Name: "helper"}, Spec: v1alpha3.AgentTemplateSpec{ModelConfig: &v1alpha3.ObjectReference{Name: model.Name}, SystemPrompt: "help"}}
+			template := &v1alpha3.AgentTemplate{ObjectMeta: metav1.ObjectMeta{Namespace: "test", Name: "helper"}, Spec: v1alpha3.AgentTemplateSpec{ModelConfig: &v1alpha3.ModelConfigReference{Name: model.Name}, SystemPrompt: "help"}}
 			agent := inlineAgent(harness, template)
-			agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: policy.Name}}
+			agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: policy.Name}}
 			compile := func() *translator.CompileResult {
 				result, err := compiler(t, model, harness, policy, secret).CompileAgent(t.Context(), agent)
 				require.NoError(t, err)
@@ -123,7 +123,7 @@ func TestAgentEgressPoliciesDoNotChangeRuntimeAcrossHarnesses(t *testing.T) {
 			unreferenced, err := compile().Digest()
 			require.NoError(t, err)
 			require.Equal(t, original, unreferenced)
-			agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: policy.Name}}
+			agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: policy.Name}}
 			require.NotContains(t, result.EgressDestinations, "https://registry.npmjs.org:443", "previous revision remains pinned")
 			// Conflicting and missing policies are independent of runtime compilation.
 			policy.Spec.Destinations[0].Origin = "https://api.openai.com"
@@ -139,7 +139,7 @@ func TestAgentEgressPoliciesDoNotChangeRuntimeAcrossHarnesses(t *testing.T) {
 			require.NoError(t, err)
 			withConflict, err := compile().Digest()
 			require.NoError(t, err)
-			agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "missing"}}
+			agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "missing"}}
 			missing, err := compile().Digest()
 			require.NoError(t, err)
 			require.Equal(t, withConflict, missing)
@@ -160,7 +160,7 @@ func TestEgressPolicyResolutionFailsClosed(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			policy, secret := egressPolicy()
 			objects := []any{policy, secret}
-			refs := []corev1.LocalObjectReference{{Name: policy.Name}}
+			refs := []v1alpha3.EgressPolicyReference{{Name: policy.Name}}
 			switch name {
 			case "missing policy":
 				objects = []any{secret}
@@ -192,7 +192,7 @@ func TestEgressPolicyResolutionFailsClosed(t *testing.T) {
 					secret.Data["other"] = []byte("different")
 				}
 				objects = append(objects, other)
-				refs = append(refs, corev1.LocalObjectReference{Name: other.Name})
+				refs = append(refs, v1alpha3.EgressPolicyReference{Name: other.Name})
 			}
 			resolution := translator.CompileEgressPolicies(krt.TestingDummyContext{}, mockCollections(t, objects...), "test", refs)
 			if name == "conflicting auth" || name == "conflicting prefix" {
@@ -215,7 +215,7 @@ func TestEgressPoliciesMergeCredentialsAndOrigins(t *testing.T) {
 		Origin: "https://tickets.example.com:8443", Authentication: &v1alpha3.EgressAuthentication{Header: "X-API-Key", SecretKeyRef: policy.Spec.Destinations[0].Authentication.SecretKeyRef},
 	})
 	collections := mockCollections(t, policy, other, secret)
-	refs := []corev1.LocalObjectReference{{Name: policy.Name}, {Name: other.Name}}
+	refs := []v1alpha3.EgressPolicyReference{{Name: policy.Name}, {Name: other.Name}}
 	resolution := translator.CompileEgressPolicies(krt.TestingDummyContext{}, collections, "test", refs)
 	require.Empty(t, resolution.Issues)
 	access, err := egress.CanonicalAccess(resolution.Access.Destinations, resolution.Access.Credentials, nil)
@@ -234,7 +234,7 @@ func TestEgressPoliciesMergeCredentialsAndOrigins(t *testing.T) {
 func TestEgressPoliciesResolveIndependently(t *testing.T) {
 	policy, secret := egressPolicy()
 	resolution := translator.CompileEgressPolicies(krt.TestingDummyContext{}, mockCollections(t, policy, secret), "test",
-		[]corev1.LocalObjectReference{{Name: "z-missing"}, {Name: policy.Name}, {Name: "a-missing"}})
+		[]v1alpha3.EgressPolicyReference{{Name: "z-missing"}, {Name: policy.Name}, {Name: "a-missing"}})
 	require.Equal(t, []string{"https://tickets.example.com:443"}, resolution.Access.Destinations)
 	require.Len(t, resolution.Access.Credentials, 1)
 	require.Len(t, resolution.Issues, 2)
@@ -243,16 +243,36 @@ func TestEgressPoliciesResolveIndependently(t *testing.T) {
 	require.Equal(t, "test/z-missing", resolution.Issues[1].Policy)
 }
 
+func TestEgressPolicyReferenceKinds(t *testing.T) {
+	t.Run("Given an EgressPolicy, when a reference omits its kind or names EgressPolicy, assert that both grant the same access", func(t *testing.T) {
+		policy, secret := egressPolicy()
+		collections := mockCollections(t, policy, secret)
+		implicit := translator.CompileEgressPolicies(krt.TestingDummyContext{}, collections, "test", []v1alpha3.EgressPolicyReference{{Name: policy.Name}})
+		explicit := translator.CompileEgressPolicies(krt.TestingDummyContext{}, collections, "test", []v1alpha3.EgressPolicyReference{{Group: new("api.kagent.dev"), Kind: new("EgressPolicy"), Name: policy.Name}})
+		require.Empty(t, explicit.Issues)
+		require.Equal(t, []string{"https://tickets.example.com:443"}, explicit.Access.Destinations)
+		require.Equal(t, implicit, explicit)
+	})
+	t.Run("Given an EgressPolicy, when a reference with its name names another kind, assert that it grants nothing and reports InvalidKind", func(t *testing.T) {
+		policy, secret := egressPolicy()
+		resolution := translator.CompileEgressPolicies(krt.TestingDummyContext{}, mockCollections(t, policy, secret), "test",
+			[]v1alpha3.EgressPolicyReference{{Group: new("example.com"), Kind: new("Policy"), Name: policy.Name}})
+		require.Empty(t, resolution.Access.Destinations)
+		require.Empty(t, resolution.Access.Credentials)
+		require.Equal(t, []translator.EgressGrantIssue{{Policy: "test/tickets", Reason: "InvalidKind", Message: "unsupported kind Policy.example.com"}}, resolution.Issues)
+	})
+}
+
 func TestInvalidEgressReferencesRevokeAll(t *testing.T) {
 	for _, name := range []string{"too many", "invalid name"} {
 		t.Run(name, func(t *testing.T) {
 			policy, secret := egressPolicy()
-			refs := []corev1.LocalObjectReference{{Name: policy.Name}}
+			refs := []v1alpha3.EgressPolicyReference{{Name: policy.Name}}
 			if name == "invalid name" {
-				refs = append(refs, corev1.LocalObjectReference{Name: "Invalid!"})
+				refs = append(refs, v1alpha3.EgressPolicyReference{Name: "Invalid!"})
 			} else {
 				for range 16 {
-					refs = append(refs, corev1.LocalObjectReference{Name: policy.Name})
+					refs = append(refs, v1alpha3.EgressPolicyReference{Name: policy.Name})
 				}
 			}
 			resolution := translator.CompileEgressPolicies(krt.TestingDummyContext{}, mockCollections(t, policy, secret), "test", refs)

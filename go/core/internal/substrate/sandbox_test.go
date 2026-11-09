@@ -38,7 +38,7 @@ func TestSandboxPreparationPinsCompleteInputs(t *testing.T) {
 	_, same, _, err := SandboxActorTemplate(template, atev1.SandboxClassGvisor, policy)
 	require.NoError(t, err)
 	require.Equal(t, digest, same)
-	template.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "live"}}
+	template.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "live"}}
 	_, unchanged, source, err := SandboxActorTemplate(template, "", policy)
 	require.NoError(t, err)
 	require.Equal(t, digest, unchanged, "policy references are live authorization")

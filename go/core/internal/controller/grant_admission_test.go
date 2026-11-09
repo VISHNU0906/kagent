@@ -35,7 +35,7 @@ func TestGrantAdmissionAcrossSources(t *testing.T) {
 					collections, _ := newPreparationTestCollections(t, "gvisor")
 					initial := collections.Reconciliations.List()[0]
 					agent := initial.Agent.DeepCopy()
-					agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "a"}, {Name: "b"}}
+					agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "a"}, {Name: "b"}}
 					collections.Agents.(krt.StaticCollection[*v1alpha3.Agent]).UpdateObject(agent)
 					policies = collections.EgressPolicies.(krt.StaticCollection[*v1alpha3.EgressPolicy])
 					template := proto.CloneOf(initial.Target.ActorTemplate)
@@ -53,7 +53,7 @@ func TestGrantAdmissionAcrossSources(t *testing.T) {
 				case "sandbox":
 					template := sandboxTestTemplate()
 					template.Finalizers = []string{sandboxPreparationFinalizer}
-					template.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "a"}, {Name: "b"}}
+					template.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "a"}, {Name: "b"}}
 					templates := krt.NewStaticCollection(nil, []*v1alpha3.SandboxTemplate{template}, opts.WithName("templates")...)
 					policies = krt.NewStaticCollection[*v1alpha3.EgressPolicy](nil, nil, opts.WithName("policies")...)
 					pools := krt.NewStaticCollection(nil, []*atev1.WorkerPool{{ObjectMeta: metav1.ObjectMeta{Namespace: template.Namespace, Name: "default"}}}, opts.WithName("pools")...)
@@ -123,7 +123,7 @@ func TestAgentGrantAdmissionReservesTokenPassthroughOrigins(t *testing.T) {
 		const origin = "https://mcp.example.com:443"
 		server := &v1alpha3.RemoteMCPServer{ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "user"}, Spec: v1alpha3.RemoteMCPServerSpec{URL: "https://mcp.example.com/mcp", TokenPassthrough: new(true)}}
 		template := &v1alpha3.AgentTemplate{ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "assistant", UID: "template-uid"}, Spec: v1alpha3.AgentTemplateSpec{
-			Tools: []v1alpha3.ToolBinding{{MCP: &v1alpha3.MCPToolBinding{Server: corev1.TypedObjectReference{Kind: "RemoteMCPServer", Name: server.Name}, Tools: []string{"lookup"}}}},
+			Tools: []v1alpha3.ToolBinding{{MCP: &v1alpha3.MCPToolBinding{Server: v1alpha3.MCPServerReference{Kind: new("RemoteMCPServer"), Name: server.Name}, Tools: []string{"lookup"}}}},
 		}}
 		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "auth"}, Data: map[string][]byte{"token": []byte("value")}}
 		collections, _ := newPreparationTestCollectionsFor(t, "gvisor", template, server, secret)
@@ -131,7 +131,7 @@ func TestAgentGrantAdmissionReservesTokenPassthroughOrigins(t *testing.T) {
 		target := egresspolicy.GatewayTarget{Origin: origin, Header: "authorization", Prefix: "Bearer "}
 		require.Equal(t, []egresspolicy.GatewayTarget{target}, initial.Target.Revision.TokenPassthroughTargets)
 		agent := initial.Agent.DeepCopy()
-		agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "keys"}}
+		agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "keys"}}
 		collections.Agents.(krt.StaticCollection[*v1alpha3.Agent]).UpdateObject(agent)
 		prepared := proto.CloneOf(initial.Target.ActorTemplate)
 		prepared.Metadata.Uid, prepared.Status = "prepared", sandboxGoldenStatus()
@@ -163,7 +163,7 @@ func TestAgentGrantAdmissionWithAndWithoutCompiledBase(t *testing.T) {
 		policies := collections.EgressPolicies.(krt.StaticCollection[*v1alpha3.EgressPolicy])
 		agents := collections.Agents.(krt.StaticCollection[*v1alpha3.Agent])
 		agent := initial.Agent.DeepCopy()
-		agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "a"}, {Name: "b"}}
+		agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "a"}, {Name: "b"}}
 		agents.UpdateObject(agent)
 		harness := harnesses.List()[0]
 		harnesses.DeleteObject("team-a/byo")

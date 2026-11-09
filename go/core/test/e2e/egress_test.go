@@ -93,7 +93,7 @@ func TestSessionEgressPolicyUpdatesLiveActors(t *testing.T) {
 		modelURL, model, runs := startEgressSkillMock(t, harness.skillsRoot(), destination, "live", "checkpoint", "fresh", "resumed", "fork")
 		config := harness.createModel(t, kube, modelURL, nil)
 		template := &v1alpha3.AgentTemplate{ObjectMeta: metav1.ObjectMeta{GenerateName: "live-egress-", Namespace: "kagent", Labels: harness.labels()}, Spec: v1alpha3.AgentTemplateSpec{
-			ModelConfig: &v1alpha3.ObjectReference{Name: config.Name}, SystemPrompt: "Load the egress skill and run its probe.",
+			ModelConfig: &v1alpha3.ModelConfigReference{Name: config.Name}, SystemPrompt: "Load the egress skill and run its probe.",
 			Skills: []v1alpha3.AgentTemplateSkill{{Name: "egress", Source: v1alpha3.ArtifactSource{OCI: image, Path: "egress"}}},
 		}}
 		createAndWaitInteractionTemplate(t, harness, kube, template)
@@ -120,7 +120,7 @@ func TestSessionEgressPolicyUpdatesLiveActors(t *testing.T) {
 		run.expect(t, "initial", "DENIED")
 		require.Zero(t, requests("live_initial"), "ungranted requests reached the destination")
 		require.NoError(t, kube.Get(t.Context(), key, agent))
-		agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: grant.Name}}
+		agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: grant.Name}}
 		require.NoError(t, kube.Update(t.Context(), agent))
 		run.setPhase("allowed")
 		run.expect(t, "allowed", "ALLOWED")
@@ -526,7 +526,7 @@ func TestSandboxEgressPolicyUpdatesLiveActor(t *testing.T) {
 	template := &v1alpha3.SandboxTemplate{}
 	key := ctrlclient.ObjectKey{Namespace: f.template.Namespace, Name: f.template.Name}
 	require.NoError(t, kube.Get(f.ctx, key, template))
-	template.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: grant.Name}}
+	template.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: grant.Name}}
 	require.NoError(t, kube.Update(f.ctx, template))
 	require.Eventually(t, func() bool { return strings.Contains(probe("allowed"), "ALLOWED") }, time.Minute, time.Second)
 	require.Positive(t, requests("allowed"))

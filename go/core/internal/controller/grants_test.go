@@ -45,7 +45,7 @@ func TestAgentEgressErrorsDoNotBlockCompilation(t *testing.T) {
 				})
 			}
 			agent := collections.Agents.List()[0].DeepCopy()
-			agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "access"}}
+			agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "access"}}
 			collections.Agents.(krt.StaticCollection[*v1alpha3.Agent]).UpdateObject(agent)
 			waitFor(t, func() bool {
 				observed := collections.AgentStatuses.GetKey("team-a/assistant")
@@ -82,7 +82,7 @@ func TestAgentGrantChangesReconcileWithoutRuntimeChange(t *testing.T) {
 		policy := &v1alpha3.EgressPolicy{ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "access"}, Spec: v1alpha3.EgressPolicySpec{Destinations: []v1alpha3.EgressDestination{{Origin: "https://tickets.example.com"}}}}
 		collections.EgressPolicies.(krt.StaticCollection[*v1alpha3.EgressPolicy]).UpdateObject(policy)
 		agent := initial.Agent.DeepCopy()
-		agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: policy.Name}}
+		agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: policy.Name}}
 		collections.Agents.(krt.StaticCollection[*v1alpha3.Agent]).UpdateObject(agent)
 		synctest.Wait()
 		backend.inspect(func() {
@@ -115,7 +115,7 @@ func TestAgentGrantsSurviveUnrelatedCompilationFailure(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				collections, harnesses := newPreparationTestCollections(t, "gvisor")
 				agent := collections.Agents.List()[0].DeepCopy()
-				agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "access"}}
+				agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "access"}}
 				switch missing {
 				case "Harness":
 					agent.Spec.HarnessRef.Name = "missing"
@@ -247,7 +247,7 @@ func TestSandboxGrantsSurviveUnrelatedCompilationFailure(t *testing.T) {
 	opts := krt.NewOptionsBuilder(t.Context().Done(), "test-grants", nil)
 	template := sandboxTestTemplate()
 	template.Finalizers = []string{sandboxPreparationFinalizer}
-	template.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "access"}}
+	template.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "access"}}
 	templates := krt.NewStaticCollection(nil, []*v1alpha3.SandboxTemplate{template}, opts.WithName("Templates")...)
 	policy := &v1alpha3.EgressPolicy{ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "access"}, Spec: v1alpha3.EgressPolicySpec{Destinations: []v1alpha3.EgressDestination{{Origin: "https://tickets.example.com"}}}}
 	policies := krt.NewStaticCollection(nil, []*v1alpha3.EgressPolicy{policy}, opts.WithName("Policies")...)
@@ -292,7 +292,7 @@ func TestPreparationReplaysAndRetriesUnchangedGrants(t *testing.T) {
 				case "agent":
 					collections, harnesses := newPreparationTestCollections(t, "gvisor")
 					agent := collections.Agents.List()[0].DeepCopy()
-					agent.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: "access"}}
+					agent.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: "access"}}
 					collections.EgressPolicies.(krt.StaticCollection[*v1alpha3.EgressPolicy]).UpdateObject(&v1alpha3.EgressPolicy{
 						ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "access"}, Spec: v1alpha3.EgressPolicySpec{Destinations: []v1alpha3.EgressDestination{{Origin: grants.Destinations[0]}}},
 					})

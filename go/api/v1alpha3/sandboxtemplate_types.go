@@ -4,7 +4,6 @@
 package v1alpha3
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -46,7 +45,7 @@ type SandboxTemplateSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self.all(ref, has(ref.name) && ref.name != '')",message="egressPolicyRefs requires non-empty names"
 	// +listType=map
 	// +listMapKey=name
-	EgressPolicyRefs []corev1.LocalObjectReference `json:"egressPolicyRefs,omitempty"`
+	EgressPolicyRefs []EgressPolicyReference `json:"egressPolicyRefs,omitempty"`
 }
 
 // SandboxTemplateConditionEgressPoliciesApplied reports grant admission independently of Ready.

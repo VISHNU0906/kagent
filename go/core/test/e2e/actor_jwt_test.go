@@ -14,7 +14,6 @@ import (
 	guestpb "github.com/agent-substrate/env/proto/ateenv/v1alpha"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -33,7 +32,7 @@ func TestModelActorJWTInjection(t *testing.T) {
 		model.Spec.ActorJWT = &v1alpha3.ActorJWT{Audiences: []string{"model-e2e"}, ExpirationSeconds: new(int64(600))}
 		require.NoError(t, kube.Patch(t.Context(), model, ctrlclient.MergeFrom(base)))
 		template := &v1alpha3.AgentTemplate{ObjectMeta: metav1.ObjectMeta{GenerateName: "actor-jwt-", Namespace: "kagent", Labels: harness.labels()}, Spec: v1alpha3.AgentTemplateSpec{
-			ModelConfig: &v1alpha3.ObjectReference{Name: model.Name}, SystemPrompt: "Reply briefly.",
+			ModelConfig: &v1alpha3.ModelConfigReference{Name: model.Name}, SystemPrompt: "Reply briefly.",
 		}}
 		createAndWaitInteractionTemplate(t, harness, kube, template)
 		fixture := newInteractionFixtureForTemplate(t, harness, target, template.Name)
@@ -100,7 +99,7 @@ func TestEgressPolicyActorJWTInjection(t *testing.T) {
 	template := &v1alpha3.SandboxTemplate{}
 	require.NoError(t, kube.Get(f.ctx, ctrlclient.ObjectKey{Namespace: f.template.Namespace, Name: f.template.Name}, template))
 	base := template.DeepCopy()
-	template.Spec.EgressPolicyRefs = []corev1.LocalObjectReference{{Name: policy.Name}}
+	template.Spec.EgressPolicyRefs = []v1alpha3.EgressPolicyReference{{Name: policy.Name}}
 	require.NoError(t, kube.Patch(f.ctx, template, ctrlclient.MergeFrom(base)))
 	instance := f.create(t, 5*time.Minute)
 	actor, err := findSubstrateActor(f.ctx, f.system, f.template.Namespace, substrate.ActorName(instance.Id))

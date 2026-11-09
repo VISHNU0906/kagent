@@ -5,6 +5,11 @@ sandbox. An Agent selects policies through `spec.egressPolicyRefs`; a
 SandboxTemplate selects them through the same field. References resolve in the
 workload's namespace. Policies are managed through the Kubernetes API.
 
+A reference contains `name`. It can also set `kind`, and `group` with it.
+Omitted values select `EgressPolicy`. A reference to another kind grants no
+access and reports `InvalidKind`. The list is keyed by `name`, so one list
+cannot contain two references with the same name, even when their kinds differ.
+
 AgentTemplate owns reusable behavior, and Harness owns how it runs. Neither
 selects egress policies. This lets two Agents reuse a template while granting
 different access for their tasks. A shared child template contributes its
@@ -165,6 +170,7 @@ condition:
 | True | `Applied` | All requested grants are admitted. |
 | False | `EgressPolicyNotFound` | A referenced policy is missing or deleting. |
 | False | `InvalidEgressPolicy` | A policy, Secret reference, or reference list is invalid. |
+| False | `InvalidKind` | A reference names a kind other than `EgressPolicy`. |
 | False | `EgressGrantConflict` | New grants are held; still-requested, compatible previous grants remain. |
 
 Messages identify affected policies and conflicts. A conflict takes precedence
